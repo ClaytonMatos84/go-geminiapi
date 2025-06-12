@@ -1,39 +1,20 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
-	"os"
+	"log/slog"
+	"net/http"
 
-	"github.com/joho/godotenv"
-	"google.golang.org/genai"
+	"github.com/ClaytonMatos84/go-geminiapi/internal/routers"
+	"github.com/gorilla/handlers"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
+	mux := routers.HandleRouter()
+
+	slog.Info("Starting Gemini API server...")
+	if err := http.ListenAndServe(":8080", handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(mux)); err != nil {
+		slog.Error("Failed to start server", "error", err)
+		log.Fatalf("Failed to start server: %v", err)
 	}
-
-	ctx := context.Background()
-
-	client, err := genai.NewClient(ctx, &genai.ClientConfig{
-		APIKey: os.Getenv("GEMINI_API_KEY"),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	result, err := client.Models.GenerateContent(
-		ctx,
-		"gemini-2.0-flash",
-		genai.Text("Boa noite tudo bom?"),
-		nil,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(result.Text())
 }
